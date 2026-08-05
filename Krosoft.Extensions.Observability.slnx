@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Krosoft.Extensions.Observability/Krosoft.Extensions.Observability.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Krosoft.Extensions.Observability.Tests/Krosoft.Extensions.Observability.Tests.csproj" />
+  </Folder>
+</Solution>
