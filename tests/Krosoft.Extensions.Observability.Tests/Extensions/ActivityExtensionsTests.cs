@@ -28,20 +28,33 @@ public class ActivityExtensionsTests : BaseTest
     [TestMethod]
     public void AjoutDUnIdentifiantDeCorrelation_RenseigneLAttribut()
     {
-        var correlationId = Guid.NewGuid();
+        var correlationId = Guid.NewGuid().ToString();
         using var activity = ObservabilityConstants.ActivitySource.StartActivity("test");
 
         activity.SetCorrelationId(correlationId);
 
-        Check.That(activity!.GetTagItem(ObservabilityConstants.Attributes.CorrelationId)).IsEqualTo(correlationId.ToString());
+        Check.That(activity!.GetTagItem(ObservabilityConstants.Attributes.CorrelationId)).IsEqualTo(correlationId);
     }
 
     [TestMethod]
-    public void AjoutDUnIdentifiantDeCorrelation_Null_NAjoutePasDAttribut()
+    public void AjoutDUnIdentifiantDeCorrelation_NonGuid_RenseigneLAttribut()
     {
         using var activity = ObservabilityConstants.ActivitySource.StartActivity("test");
 
-        activity.SetCorrelationId(null);
+        activity.SetCorrelationId("CMD-2026-0042");
+
+        Check.That(activity!.GetTagItem(ObservabilityConstants.Attributes.CorrelationId)).IsEqualTo("CMD-2026-0042");
+    }
+
+    [TestMethod]
+    [DataRow(null)]
+    [DataRow("")]
+    [DataRow("   ")]
+    public void AjoutDUnIdentifiantDeCorrelation_NonRenseigne_NAjoutePasDAttribut(string? correlationId)
+    {
+        using var activity = ObservabilityConstants.ActivitySource.StartActivity("test");
+
+        activity.SetCorrelationId(correlationId);
 
         Check.That(activity!.GetTagItem(ObservabilityConstants.Attributes.CorrelationId)).IsNull();
     }
@@ -51,9 +64,19 @@ public class ActivityExtensionsTests : BaseTest
     {
         using var activity = ObservabilityConstants.ActivitySource.StartActivity("test");
 
-        activity.SetTenantId(42);
+        activity.SetTenantId("42");
 
-        Check.That(activity!.GetTagItem(ObservabilityConstants.Attributes.TenantId)).IsEqualTo(42L);
+        Check.That(activity!.GetTagItem(ObservabilityConstants.Attributes.TenantId)).IsEqualTo("42");
+    }
+
+    [TestMethod]
+    public void AjoutDUnTenant_NonRenseigne_NAjoutePasDAttribut()
+    {
+        using var activity = ObservabilityConstants.ActivitySource.StartActivity("test");
+
+        activity.SetTenantId(null);
+
+        Check.That(activity!.GetTagItem(ObservabilityConstants.Attributes.TenantId)).IsNull();
     }
 
     [TestMethod]

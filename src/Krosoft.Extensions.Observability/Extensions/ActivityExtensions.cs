@@ -9,15 +9,15 @@ public static class ActivityExtensions
     /// Expose l'identifiant de corrélation métier comme attribut de la trace : c'est la clé
     /// qui permet de passer des données applicatives à la trace, et inversement.
     /// </summary>
-    public static Activity? SetCorrelationId(this Activity? activity, Guid? correlationId)
-        => correlationId.HasValue
-            ? activity?.SetTag(ObservabilityConstants.Attributes.CorrelationId, correlationId.Value.ToString())
-            : activity;
+    public static Activity? SetCorrelationId(this Activity? activity, string? correlationId)
+        => string.IsNullOrWhiteSpace(correlationId)
+            ? activity
+            : activity?.SetTag(ObservabilityConstants.Attributes.CorrelationId, correlationId);
 
-    public static Activity? SetTenantId(this Activity? activity, long? tenantId)
-        => tenantId.HasValue
-            ? activity?.SetTag(ObservabilityConstants.Attributes.TenantId, tenantId.Value)
-            : activity;
+    public static Activity? SetTenantId(this Activity? activity, string? tenantId)
+        => string.IsNullOrWhiteSpace(tenantId)
+            ? activity
+            : activity?.SetTag(ObservabilityConstants.Attributes.TenantId, tenantId);
 
     /// <summary>
     /// Marque l'activité en erreur. Indispensable quand l'exception est rattrapée sans être
