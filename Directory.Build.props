@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <Company>Krosoft</Company>
+    <Authors>Krosoft</Authors>
+    <Copyright>Copyright Â© 2012</Copyright>
+    <RepositoryUrl>https://github.com/krosoft-dev/Krosoft.Extensions.Observability.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>default</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <!--  GHSA-rvv3-g6hj-g44x : AutoMapper Vulnerable to Denial of Service (DoS) -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-rvv3-g6hj-g44x" />
+  </ItemGroup>
+</Project>
