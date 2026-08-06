@@ -16,19 +16,27 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Exporte les logs, les traces et les métriques en OTLP.
-    /// L'endpoint, le protocole et l'échantillonnage sont lus par le SDK depuis les variables
-    /// d'environnement standard (OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_PROTOCOL,
-    /// OTEL_TRACES_SAMPLER...) : rien n'est à configurer dans les appsettings.
+    /// L'endpoint, le protocole et l'échantillonnage sont lus par le SDK depuis les variables d'environnement standard
+    /// (OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_PROTOCOL, OTEL_TRACES_SAMPLER...) : rien n'est à configurer dans les appsettings.
     /// </summary>
+    /// <param name="services">Collection de services.</param>
+    /// <param name="configuration">Configuration de l'application.</param>
+    /// <param name="logging">Constructeur de logs sur lequel brancher l'export OTLP.</param>
+    /// <param name="action">Configuration des options : nom du service, signaux exportés, instrumentations.</param>
+    /// <returns>Collection de services pour chaînage.</returns>
     public static IServiceCollection AddObservability(this IServiceCollection services,
                                                       IConfiguration configuration,
                                                       ILoggingBuilder logging,
-                                                      string serviceName,
-                                                      Action<ObservabilityOptions>? configure = null)
+                                                      Action<ObservabilityOptions> action)
     {
         Guard.IsNotNull(nameof(configuration), configuration);
         Guard.IsNotNull(nameof(logging), logging);
-        Guard.IsNotNullOrWhiteSpace(nameof(serviceName), serviceName);
+        Guard.IsNotNull(nameof(action), action);
+
+        var options = new ObservabilityOptions();
+        action(options);
+
+        Guard.IsNotNullOrWhiteSpace(nameof(options.ServiceName), options.ServiceName);
 
         // Sans endpoint, rien n'est enregistré : les tests et le développement hors conteneur
         // ne doivent pas tenter d'exporter quoi que ce soit.
@@ -37,42 +45,58 @@ public static class ServiceCollectionExtensions
             return services;
         }
 
-        var options = new ObservabilityOptions();
-        configure?.Invoke(options);
+        // Aucun signal demandé : l'observabilité est désactivée, rien n'est enregistré.
+        if (!options.IsTracingEnabled && !options.IsMetricsEnabled && !options.IsLoggingEnabled)
+        {
+            return services;
+        }
 
         var environmentName = configuration[ObservabilityConstants.Variables.Environment];
 
-        services.AddOpenTelemetry()
-                .ConfigureResource(resource => ConfigureResource(resource, serviceName, environmentName))
-                .WithTracing(tracing =>
-                {
-                    tracing.AddAspNetCoreInstrumentation(o => o.Filter = IsNotHealthCheck)
-                           .AddHttpClientInstrumentation()
-                           .AddSource(ObservabilityConstants.Name)
-                           .AddSource(serviceName)
-                           .AddOtlpExporter();
+        // La resource est configurée même si un seul signal est actif : elle porte le service.name
+        // des traces, des métriques et des logs.
+        var builder = services.AddOpenTelemetry()
+                              .ConfigureResource(resource => ConfigureResource(resource, options.ServiceName, environmentName));
 
-                    options.ApplyTracing(tracing);
-                })
-                .WithMetrics(metrics =>
-                {
-                    metrics.AddAspNetCoreInstrumentation()
-                           .AddHttpClientInstrumentation()
-                           .AddRuntimeInstrumentation()
-                           .AddMeter(ObservabilityConstants.Name)
-                           .AddMeter(serviceName)
-                           .AddOtlpExporter();
-
-                    options.ApplyMetrics(metrics);
-                });
-
-        logging.AddOpenTelemetry(o =>
+        if (options.IsTracingEnabled)
         {
-            // Sans ces deux options, les logs arrivent avec un corps vide et sans attributs.
-            o.IncludeFormattedMessage = true;
-            o.IncludeScopes = true;
-            o.AddOtlpExporter();
-        });
+            builder.WithTracing(tracing =>
+            {
+                tracing.AddAspNetCoreInstrumentation(o => o.Filter = IsNotHealthCheck)
+                       .AddHttpClientInstrumentation()
+                       .AddSource(ObservabilityConstants.Name)
+                       .AddSource(options.ServiceName)
+                       .AddOtlpExporter();
+
+                options.ApplyTracing(tracing);
+            });
+        }
+
+        if (options.IsMetricsEnabled)
+        {
+            builder.WithMetrics(metrics =>
+            {
+                metrics.AddAspNetCoreInstrumentation()
+                       .AddHttpClientInstrumentation()
+                       .AddRuntimeInstrumentation()
+                       .AddMeter(ObservabilityConstants.Name)
+                       .AddMeter(options.ServiceName)
+                       .AddOtlpExporter();
+
+                options.ApplyMetrics(metrics);
+            });
+        }
+
+        if (options.IsLoggingEnabled)
+        {
+            logging.AddOpenTelemetry(o =>
+            {
+                // Sans ces deux options, les logs arrivent avec un corps vide et sans attributs.
+                o.IncludeFormattedMessage = true;
+                o.IncludeScopes = true;
+                o.AddOtlpExporter();
+            });
+        }
 
         return services;
     }

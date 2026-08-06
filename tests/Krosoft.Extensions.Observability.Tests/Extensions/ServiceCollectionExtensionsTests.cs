@@ -43,6 +43,63 @@ public class ServiceCollectionExtensionsTests : BaseTest
     }
 
     [TestMethod]
+    public void AjoutDeLObservabilite_AvecTracingDesactive_NEnregistrePasLesTraces()
+    {
+        var services = Add(Endpoint, options => options.IsTracingEnabled = false);
+
+        Check.That(services.Any(s => s.ServiceType == typeof(TracerProvider))).IsFalse();
+        Check.That(services.Any(s => s.ServiceType == typeof(MeterProvider))).IsTrue();
+    }
+
+    [TestMethod]
+    public void AjoutDeLObservabilite_AvecMetriquesDesactivees_NEnregistrePasLesMetriques()
+    {
+        var services = Add(Endpoint, options => options.IsMetricsEnabled = false);
+
+        Check.That(services.Any(s => s.ServiceType == typeof(MeterProvider))).IsFalse();
+        Check.That(services.Any(s => s.ServiceType == typeof(TracerProvider))).IsTrue();
+    }
+
+    [TestMethod]
+    public void AjoutDeLObservabilite_AvecTracesEtMetriquesDesactivees_EnregistreQuandMemeLesLogs()
+    {
+        var services = Add(Endpoint, options =>
+        {
+            options.IsTracingEnabled = false;
+            options.IsMetricsEnabled = false;
+        });
+
+        Check.That(services.Any(s => s.ServiceType == typeof(TracerProvider))).IsFalse();
+        Check.That(services.Any(s => s.ServiceType == typeof(MeterProvider))).IsFalse();
+        Check.That(services.Where(s => s.ServiceType == typeof(ILoggerProvider))).HasSize(1);
+    }
+
+    [TestMethod]
+    public void AjoutDeLObservabilite_AvecLogsDesactives_NEnregistrePasLeFournisseurDeLogs()
+    {
+        var services = Add(Endpoint, options => options.IsLoggingEnabled = false);
+
+        Check.That(services.Any(s => s.ServiceType == typeof(ILoggerProvider))).IsFalse();
+        Check.That(services.Any(s => s.ServiceType == typeof(TracerProvider))).IsTrue();
+        Check.That(services.Any(s => s.ServiceType == typeof(MeterProvider))).IsTrue();
+    }
+
+    [TestMethod]
+    public void AjoutDeLObservabilite_AvecTousLesSignauxDesactives_NEnregistreAucunFournisseur()
+    {
+        var services = Add(Endpoint, options =>
+        {
+            options.IsTracingEnabled = false;
+            options.IsMetricsEnabled = false;
+            options.IsLoggingEnabled = false;
+        });
+
+        Check.That(services.Any(s => s.ServiceType == typeof(TracerProvider))).IsFalse();
+        Check.That(services.Any(s => s.ServiceType == typeof(MeterProvider))).IsFalse();
+        Check.That(services.Any(s => s.ServiceType == typeof(ILoggerProvider))).IsFalse();
+    }
+
+    [TestMethod]
     public void AjoutDeLObservabilite_AvecUneConfigurationSpecifique_LApplique()
     {
         var appele = false;
@@ -50,6 +107,20 @@ public class ServiceCollectionExtensionsTests : BaseTest
         Add(Endpoint, options => options.ConfigureTracing(_ => appele = true));
 
         Check.That(appele).IsTrue();
+    }
+
+    [TestMethod]
+    public void AjoutDeLObservabilite_AvecTracingDesactive_NAppliquePasLaConfigurationSpecifique()
+    {
+        var appele = false;
+
+        Add(Endpoint, options =>
+        {
+            options.IsTracingEnabled = false;
+            options.ConfigureTracing(_ => appele = true);
+        });
+
+        Check.That(appele).IsFalse();
     }
 
     [TestMethod]
@@ -64,7 +135,12 @@ public class ServiceCollectionExtensionsTests : BaseTest
 
     [TestMethod]
     public void AjoutDeLObservabilite_SansNomDeService_LeveUneErreur()
-        => Check.ThatCode(() => Add(Endpoint, serviceName: " "))
+        => Check.ThatCode(() => Add(Endpoint, options => options.ServiceName = " "))
+                .Throws<KrosoftTechnicalException>();
+
+    [TestMethod]
+    public void AjoutDeLObservabilite_SansEndpointNiNomDeService_LeveUneErreur()
+        => Check.ThatCode(() => Add(null, options => options.ServiceName = string.Empty))
                 .Throws<KrosoftTechnicalException>();
 
     [TestMethod]
@@ -73,17 +149,24 @@ public class ServiceCollectionExtensionsTests : BaseTest
         var services = new ServiceCollection();
         IServiceCollection? resultat = null;
 
-        services.AddLogging(logging => resultat = services.AddObservability(CreateConfiguration(Endpoint), logging, "test-service"));
+        services.AddLogging(logging => resultat = services.AddObservability(CreateConfiguration(Endpoint),
+                                                                            logging,
+                                                                            options => options.ServiceName = "test-service"));
 
         Check.That(resultat).IsSameReferenceAs(services);
     }
 
     private static IServiceCollection Add(string? endpoint,
-                                          Action<ObservabilityOptions>? configure = null,
-                                          string serviceName = "test-service")
+                                          Action<ObservabilityOptions>? configure = null)
     {
         var services = new ServiceCollection();
-        services.AddLogging(logging => services.AddObservability(CreateConfiguration(endpoint), logging, serviceName, configure));
+        services.AddLogging(logging => services.AddObservability(CreateConfiguration(endpoint),
+                                                                 logging,
+                                                                 options =>
+                                                                 {
+                                                                     options.ServiceName = "test-service";
+                                                                     configure?.Invoke(options);
+                                                                 }));
 
         return services;
     }
