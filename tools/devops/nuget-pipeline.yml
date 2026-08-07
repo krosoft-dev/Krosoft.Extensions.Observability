@@ -15,12 +15,11 @@ trigger:
       - main
   paths:
     include:
-      - "**/Krosoft.Extensions.Observability/*"
+      - src
+      - Directory.Build.props
 
 extends:
   template: tools/devops/templates/pipelines/nuget-template.yml@Krosoft.Extensions
   parameters:
     packages:
-     
-     - "Krosoft.Extensions.Observability"
-
+      - "Krosoft.Extensions.Observability"
