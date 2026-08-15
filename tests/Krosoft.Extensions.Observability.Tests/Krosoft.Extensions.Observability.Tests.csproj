@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
-		<PackageReference Include="Krosoft.Extensions.Testing" Version="2026.8.7.9008" />
+		<PackageReference Include="Krosoft.Extensions.Testing" Version="2026.8.10.9031" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.10" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.10" />
 	</ItemGroup>
