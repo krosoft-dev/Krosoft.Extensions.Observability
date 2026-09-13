@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
 		<PackageReference Include="Krosoft.Extensions.Testing" Version="2026.9.5.10275" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.11" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.12" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.12" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\Krosoft.Extensions.Observability\Krosoft.Extensions.Observability.csproj" />
