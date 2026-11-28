@@ -14,6 +14,6 @@
 		<PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.21.0" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Krosoft.Extensions.Core" Version="2026.11.16.13768" />
+		<PackageReference Include="Krosoft.Extensions.Core" Version="2026.11.27.14276" />
 	</ItemGroup>
 </Project>
